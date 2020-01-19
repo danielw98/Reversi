@@ -3,7 +3,8 @@
 import time
 import copy
 import numpy as np
-
+A = {0:"A",1:"B",2:"C",3:"D",4:"E",5:"F",6:"G",7:"H"}
+B = {"A":0,"B":1,"C":2,"D":3,"E":4,"F":5,"G":6,"H":7}
 def game_over(gc,player):
     return len(gc.get_moves(player)) == 0
 
@@ -68,6 +69,7 @@ def initial_board():
         my_list.append(" 5 |# # # # # # # #")
         my_list.append(" 6 |# # # # # # # #")
         my_list.append(" 7 |# # # # # # # #")
+
         return my_list
 
 
@@ -75,6 +77,11 @@ def initial_used():
     used = np.empty((8,8), dtype='str')
     used[3][3] = used[4][4] = 'n'
     used[3][4] = used[4][3] = 'a'
+    place_piece(3,3,0)
+    place_piece(4,4,0)
+    place_piece(4,3,1)
+    place_piece(3,4,1)
+    pg.display.flip()
     return used
 
 
@@ -92,7 +99,7 @@ class GameController:
     def print_board(self):
         print("\n".join(self.board))
 
-    def set_board(self, i, j, k):
+    def set_board(self, i, j, k,gui=None):
         pos = 4 + 2*j
         text = self.board[i+2]
         text = text[:pos] + self.colors[k] + text[pos+1:]
@@ -101,6 +108,12 @@ class GameController:
             self.score[other(k)] -= 1
         self.used[i][j] = self.colors[k]
         self.score[k] += 1
+
+        if gui:
+            place_piece(i,j,k)
+            pg.display.flip()
+
+
 
     def get_board(self,i,j):
         return self.board[i+2][4+2*j]
@@ -122,7 +135,7 @@ class GameController:
                     m8 = self.possible_move(i, j, 1, 1, player)
 
                     if m1 or m2 or m3 or m4 or m5 or m6 or m7 or m8:
-                        moves.append((i,j))
+                        moves.append((i,A[j]))
         return moves
 
     def check_stuff(self,i,j,off_i,off_j,player):
@@ -154,7 +167,7 @@ class GameController:
             return False
         return self.explore(i+off_i,j+off_j,off_i,off_j,player)
 
-    def flip_line(self,i,j,off_i,off_j,player):
+    def flip_line(self,i,j,off_i,off_j,player,gui):
         if i + off_i < 0 or i + off_i > 7:
             return False
         if j + off_j < 0 or j + off_j > 7:
@@ -164,23 +177,27 @@ class GameController:
         if self.used[i+off_i][j+off_j] == self.colors[player]:
             return True
         else:
-            if self.flip_line(i+off_i,j+off_j,off_i,off_j,player):
-                self.set_board(i+off_i,j+off_j,player)
+            if self.flip_line(i+off_i,j+off_j,off_i,off_j,player,gui):
+                self.set_board(i+off_i,j+off_j,player,gui)
+                if gui:
+                    place_piece(i,j,player)
+                    pg.display.flip()
                 return True
             else:
                 return False
 
-    def flip_board(self,i,j,player):
-        self.flip_line(i, j, -1, -1, player)
-        self.flip_line(i, j, -1, 0, player)
-        self.flip_line(i, j, -1, 1, player)
 
-        self.flip_line(i, j, 0, -1, player)
-        self.flip_line(i, j, 0, 1, player)
+    def flip_board(self,i,j,player,gui):
+        self.flip_line(i, j, -1, -1, player,gui)
+        self.flip_line(i, j, -1, 0, player,gui)
+        self.flip_line(i, j, -1, 1, player,gui)
 
-        self.flip_line(i, j, 1, -1, player)
-        self.flip_line(i, j, 1, 0, player)
-        self.flip_line(i, j, 1, 1, player)
+        self.flip_line(i, j, 0, -1, player,gui)
+        self.flip_line(i, j, 0, 1, player,gui)
+
+        self.flip_line(i, j, 1, -1, player,gui)
+        self.flip_line(i, j, 1, 0, player,gui)
+        self.flip_line(i, j, 1, 1, player,gui)
 
     def print_score(self):
         print(self.score)
@@ -192,13 +209,14 @@ class GameController:
         for move in moves:
             current_gc = copy.deepcopy(self)
             i,j = move
-            current_gc.make_move(i,j,player)
+            current_gc.make_move(i,j,player,None)
             my_list.append(current_gc)
         return my_list
 
-    def make_move(self,i,j,player):
-        self.set_board(i, j, player)
-        self.flip_board(i, j, player)
+    def make_move(self,i,j,player,gui):
+        self.set_board(i, B[j], player,gui)
+        self.flip_board(i, B[j], player,gui)
+
 
     '''def neighbours(self,player):
         neighbours_list = list()
@@ -219,21 +237,29 @@ class GameController:
                                 neighbours_list.append((new_i, new_j))
         return neighbours_list'''
 
-def play_round(player,gc):
+
+def show_suggested_moves(possible_moves):
+    for move in possible_moves:
+        x, y = move
+        print(x,B[y])
+
+def play_round(player,gc,gui=None):
     possible_moves = gc.get_moves(player)
     if possible_moves:
         print(possible_moves)
+        if gui:
+            show_suggested_moves(possible_moves)
     else:
         return
     while True:
         move_x = int(input("Introduceti miscarea(x): "))
-        move_y = int(input("Introduceti miscarea(y): "))
+        move_y = str(input("Introduceti miscarea(y): "))
         if (move_x, move_y) in possible_moves:
             print("ok")
             gc.make_move(move_x,move_y,player)
             return
 
-def play_computer(player,gc,depth,almost_lost):
+def play_computer(player,gc,depth,almost_lost,gui):
     evaluation, score = minimax_init(player, gc, depth, True)
     if sum(gc.score) == 64:
         return True
@@ -246,9 +272,63 @@ def play_computer(player,gc,depth,almost_lost):
         almost_lost[player] = False
     print("Best move is:", evaluation, "with expected score", score)
     move_x, move_y = evaluation
-    gc.make_move(move_x, move_y, player)
+    gc.make_move(move_x, move_y, player,gui)
     return False
 
+
+
+
+import pygame as pg
+import sys
+import random
+
+TILESIZE = 48
+BGCOLOR = 11, 68, 9
+BOARD = 0, 0, 0
+WIDTH = 800
+HEIGHT = 600
+
+pg.init()
+screen = pg.display.set_mode((WIDTH,HEIGHT))
+background = BGCOLOR
+board = pg.Surface((400,400))
+screen.fill(BGCOLOR)
+
+
+colors = [(33,138,28),(31,130,26)]
+piece_color = [(200,200,200),(40,40,40)]
+def draw_board():
+    color = 0
+    for i in range(8):
+        if i%2 == 0:
+            color = 0
+        else:
+            color = 1
+        for j in range(8):
+            color = (color + 1) % 2
+            place_tile(i, j, color)
+
+def place_tile(i,j,color):
+    pg.draw.rect(screen,colors[color],(50*i,50*j,48,48))
+
+
+def place_piece(i,j,player_idx):
+    pg.draw.circle(screen,piece_color[player_idx],(50*i+25,50*j+25),22)
+    pg.time.delay(200)
+
+draw_board()
+pg.display.flip()
+
+
+def pg_event():
+    for event in pg.event.get():
+        if event.type == pg.QUIT:
+            sys.exit()
+        if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+            sys.exit()
+
+
+gui = 1
 def playGame():
     gc = GameController()
     player_idx = 0
@@ -258,14 +338,15 @@ def playGame():
     name = ["Player","Computer"]
     initial_time = time.time()
     while not gameOver:
+        pg_event()
         gc.print_board()
         gc.print_score()
         if player_idx == me: # Player
-            #play_round(player_idx,gc)
-            gameOver = play_computer(player_idx, gc, 2, almost_lost)
+            #play_round(player_idx,gc,gui=1)
+            gameOver = play_computer(player_idx, gc, 2, almost_lost,gui)
         else: # Computer
             # play_round(player_idx)
-            gameOver = play_computer(player_idx, gc, 4, almost_lost)
+            gameOver = play_computer(player_idx, gc, 4, almost_lost,gui)
         player_idx = (player_idx + 1) % 2
     dt = time.time() - initial_time
     print("A trecut", dt)
