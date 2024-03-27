@@ -4,7 +4,7 @@ Reversi, also known as Othello, is a classic board game. This Python application
 
 ## Demo
 
-![Reversi Animation](https://github.com/danielw98/Reversi/blob/main/Reversi.gif?raw=true)
+![Reversi Animation](https://github.com/danielw98/Reversi/blob/master/Reversi.gif?raw=true)
 
 
 ## Features
