@@ -1,4 +1,4 @@
-## Reversi with AI and Min-Max
+# Reversi with AI and Min-Max
 
 Reversi, also known as Othello, is a classic board game. This Python application, created using by pygame and an AI min-max algorithm, lets you play against another player, an AI, or watch an AI vs. AI match with various levels of difficulty.
 
